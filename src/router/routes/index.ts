@@ -733,6 +733,30 @@ export const CustomerSettleRoute: AppRouteRecordRaw = {
   ],
 };
 
+export const ProduceRoute: AppRouteRecordRaw = {
+  path: '/produce',
+  name: 'ProduceRoute',
+  component: LAYOUT,
+  children: [
+    {
+      path: 'bom/add',
+      name: 'AddProduceBom',
+      component: () => import('/@/views/produce/bom/add.vue'),
+      meta: {
+        title: '新增BOM',
+      },
+    },
+    {
+      path: 'bom/modify/:id',
+      name: 'ModifyProduceBom',
+      meta: {
+        title: '修改BOM',
+      },
+      component: () => import('/@/views/produce/bom/modify.vue'),
+    },
+  ],
+};
+
 // Basic routing without permission
 // 未经许可的基本路由
 export const basicRoutes = [
@@ -747,6 +771,7 @@ export const basicRoutes = [
   StockRoute,
   SettleRoute,
   CustomerSettleRoute,
+  ProduceRoute,
   RootRoute,
   REDIRECT_ROUTE,
   PAGE_NOT_FOUND_ROUTE,

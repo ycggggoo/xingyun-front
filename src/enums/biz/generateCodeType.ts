@@ -31,6 +31,7 @@ GENERATE_CODE_TYPE.set('TAKE_STOCK_SHEET', new BaseEnumItem<number, string>(210,
 GENERATE_CODE_TYPE.set('STOCK_ADJUST_SHEET', new BaseEnumItem<number, string>(212, '库存调整单号'));
 GENERATE_CODE_TYPE.set('SC_TRANSFER_ORDER', new BaseEnumItem<number, string>(213, '仓库调拨单号'));
 GENERATE_CODE_TYPE.set('LOGISTICS_SHEET', new BaseEnumItem<number, string>(214, '物流单号'));
+GENERATE_CODE_TYPE.set('BOM', new BaseEnumItem<number, string>(400, 'BOM编号'));
 GENERATE_CODE_TYPE.set(
   'SETTLE_CHECK_SHEET',
   new BaseEnumItem<number, string>(300, '供应商对账单号'),
