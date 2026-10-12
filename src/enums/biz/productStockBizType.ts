@@ -11,5 +11,7 @@ PRODUCT_STOCK_BIZ_TYPE.set('TAKE_STOCK_IN', new BaseEnumItem<number, string>(7, 
 PRODUCT_STOCK_BIZ_TYPE.set('TAKE_STOCK_OUT', new BaseEnumItem<number, string>(8, '盘点出库'));
 PRODUCT_STOCK_BIZ_TYPE.set('STOCK_ADJUST', new BaseEnumItem<number, string>(10, '库存调整'));
 PRODUCT_STOCK_BIZ_TYPE.set('SC_TRANSFER', new BaseEnumItem<number, string>(11, '仓库调拨'));
+PRODUCT_STOCK_BIZ_TYPE.set('ASSEMBLE_IN', new BaseEnumItem<number, string>(12, '组装入库'));
+PRODUCT_STOCK_BIZ_TYPE.set('ASSEMBLE_OUT', new BaseEnumItem<number, string>(13, '组装出库'));
 
 export { PRODUCT_STOCK_BIZ_TYPE };

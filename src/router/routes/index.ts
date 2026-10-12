@@ -754,6 +754,30 @@ export const ProduceRoute: AppRouteRecordRaw = {
       },
       component: () => import('/@/views/produce/bom/modify.vue'),
     },
+    {
+      path: 'assemble/add',
+      name: 'AddProduceAssembleSheet',
+      component: () => import('/@/views/produce/assemble/add.vue'),
+      meta: {
+        title: '新增组装单',
+      },
+    },
+    {
+      path: 'assemble/modify/:id',
+      name: 'ModifyProduceAssembleSheet',
+      meta: {
+        title: '修改组装单',
+      },
+      component: () => import('/@/views/produce/assemble/modify.vue'),
+    },
+    {
+      path: 'assemble/approve/:id',
+      name: 'ApproveProduceAssembleSheet',
+      meta: {
+        title: '审核组装单',
+      },
+      component: () => import('/@/views/produce/assemble/approve.vue'),
+    },
   ],
 };
 
