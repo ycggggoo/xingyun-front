@@ -74,6 +74,14 @@
     <!-- 查看窗口 -->
     <detail :id="id" ref="viewDialog" />
 
+    <!-- 供应商品管理窗口 -->
+    <supplier-product-manager
+      ref="supplierProductDialog"
+      :supplier-id="currentSupplierId"
+      :supplier-name="currentSupplierName"
+      @confirm="search"
+    />
+
     <supplier-importer ref="importer" @confirm="search" />
 
     <!-- 批量操作 -->
@@ -96,6 +104,7 @@
   import Add from './add.vue';
   import Modify from './modify.vue';
   import Detail from './detail.vue';
+  import SupplierProductManager from './SupplierProductManager.vue';
   import * as api from '@/api/base-data/supplier';
   import {
     CheckOutlined,
@@ -118,6 +127,7 @@
       Add,
       Modify,
       Detail,
+      SupplierProductManager,
       DownOutlined,
       SupplierImporter,
       BatchHandler,
@@ -140,6 +150,8 @@
         // 当前行数据
         id: '',
         ids: [],
+        currentSupplierId: '',
+        currentSupplierName: '',
         // 查询列表的查询条件
         searchFormData: {},
         // 工具栏配置
@@ -159,7 +171,7 @@
           { field: 'createTime', title: '创建时间', width: 170, sortable: true },
           { field: 'updateBy', title: '修改人', width: 100 },
           { field: 'updateTime', title: '修改时间', width: 170, sortable: true },
-          { title: '操作', width: 120, fixed: 'right', slots: { default: 'action_default' } },
+          { title: '操作', width: 180, fixed: 'right', slots: { default: 'action_default' } },
         ],
         // 请求接口配置
         proxyConfig: {
@@ -234,6 +246,15 @@
             onClick: () => {
               this.id = row.id;
               this.$nextTick(() => this.$refs.updateDialog.openDialog());
+            },
+          },
+          {
+            permission: ['base-data:supplier:product:query'],
+            label: '关联商品',
+            onClick: () => {
+              this.currentSupplierId = row.id;
+              this.currentSupplierName = row.name;
+              this.$nextTick(() => this.$refs.supplierProductDialog.openDialog());
             },
           },
         ];
