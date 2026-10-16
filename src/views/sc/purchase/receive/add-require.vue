@@ -803,15 +803,7 @@
               purchaseDetails = purchaseDetails.map((item) => {
                 item.isFixed = true;
 
-                const row = Object.assign(this.emptyProduct(), item);
-                // getWithReceive API 返回 taxPrice（采购价）和 orderNum（PO数量），
-                // 但前端表格字段为 purchasePrice 和 remainNum，需手动映射
-                row.purchasePrice = item.taxPrice || 0;
-                row.receiveNum = 0;
-                // 剩余可收货数量 = PO数量 - 已收货数量
-                row.remainNum = (item.orderNum || 0) - (item.receiveNum || 0);
-
-                return row;
+                return Object.assign(this.emptyProduct(), item);
               });
 
               this.tableData = [...purchaseDetails, ...tableData];

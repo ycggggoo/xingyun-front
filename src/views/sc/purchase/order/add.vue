@@ -44,7 +44,9 @@
         <!-- 工具栏 -->
         <template #toolbar_buttons>
           <a-space>
-            <a-button type="primary" :icon="h(PlusOutlined)" @click="addProduct">新增</a-button>
+            <a-tooltip :title="isEmpty(formData.scId) ? '请先选择仓库后再添加商品' : '新增一行，在「商品名称」列搜索并选择商品后自动填充信息'">
+              <a-button type="primary" :icon="h(PlusOutlined)" :disabled="isEmpty(formData.scId)" @click="addProduct">新增</a-button>
+            </a-tooltip>
             <a-button :icon="h(DeleteOutlined)" @click="delProduct" danger>删除</a-button>
             <a-button :icon="h(PlusOutlined)" @click="openBatchAddProductDialog"
               >批量添加商品</a-button
@@ -70,7 +72,7 @@
             :ref="'productInputRef' + rowIndex"
             v-model:value="row.productName"
             style="width: 100%"
-            placeholder="请输入商品编号/名称"
+            placeholder="请在此搜索并选择商品"
             :options="row.productOptions"
             :dropdown-match-select-width="false"
             :dropdown-style="{ width: '900px' }"
@@ -453,6 +455,9 @@
           return;
         }
         if (event.key === 'Enter' || event.keyCode === 13) {
+          if (isEmpty(this.formData.scId)) {
+            return;
+          }
           this.addProduct();
         }
       },
