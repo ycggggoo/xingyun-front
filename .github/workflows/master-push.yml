@@ -4,12 +4,15 @@ on:
   push:
     branches: [master]
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   frontend:
     uses: ycggggoo/.github/.github/workflows/frontend-node-ci.yml@master
     with:
       image-name: ycggggoo/xingyun-web
-      node-version: '20'
     secrets:
       GHCR_PAT: ${{ secrets.GHCR_PAT }}
 
