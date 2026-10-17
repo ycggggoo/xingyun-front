@@ -100,6 +100,10 @@
         type: String,
         default: '',
       },
+      supplierId: {
+        type: String,
+        default: '',
+      },
       isReturn: {
         type: Boolean,
         default: false,
@@ -184,6 +188,7 @@
         return {
           isReturn: this.isReturn,
           scId: this.scId,
+          supplierId: this.supplierId,
           condition: this.searchFormData.condition,
           categoryId: this.searchFormData.categoryId || '',
           brandId: this.searchFormData.brandId || '',

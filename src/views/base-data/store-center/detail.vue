@@ -97,7 +97,12 @@
         api
           .get(this.id)
           .then((data) => {
-            this.formData = data;
+            this.formData = Object.fromEntries(
+              Object.entries({ ...this.formData, ...data }).map(([key, value]) => [
+                key,
+                value ?? '',
+              ]),
+            );
           })
           .finally(() => {
             this.loading = false;

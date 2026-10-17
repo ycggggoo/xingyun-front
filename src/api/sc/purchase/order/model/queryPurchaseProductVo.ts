@@ -7,6 +7,11 @@ export interface QueryPurchaseProductVo extends PageVo {
   scId: string;
 
   /**
+   * 供应商ID
+   */
+  supplierId?: string;
+
+  /**
    * 检索关键字
    */
   condition: string;

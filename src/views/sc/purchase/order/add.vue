@@ -2,7 +2,7 @@
   <div class="app-card-container">
     <div v-permission="['purchase:order:add']" v-loading="loading">
       <a-alert
-        description="提示：使用回车键可以快速添加商品；使用Tab键可以快速跳转至下一个输入框。"
+        description="提示：优先显示供应商关联商品，未维护关联时显示全部；也可勾选查看全部商品。未关联商品保存时仅提醒。回车添加商品，Tab切换输入框。"
         type="info"
         show-icon
       />
@@ -29,7 +29,10 @@
                 <supplier-selector v-model:value="formData.supplierId" />
               </j-form-item>
               <j-form-item label="采购员">
-                <user-selector v-model:value="formData.purchaserId" />
+                <user-selector
+                  v-model:value="formData.purchaserId"
+                  @update:value="purchaserTouched = true"
+                />
               </j-form-item>
               <j-form-item label="预计到货日期" required>
                 <a-date-picker
@@ -44,20 +47,34 @@
         <!-- 工具栏 -->
         <template #toolbar_buttons>
           <a-space>
-            <a-tooltip :title="isEmpty(formData.scId) ? '请先选择仓库后再添加商品' : '新增一行，在「商品名称」列搜索并选择商品后自动填充信息'">
-              <a-button type="primary" :icon="h(PlusOutlined)" :disabled="isEmpty(formData.scId)" @click="addProduct">新增</a-button>
+            <a-tooltip
+              :title="
+                isEmpty(formData.scId) || isEmpty(formData.supplierId)
+                  ? '请先选择仓库和供应商后再添加商品'
+                  : '新增一行，在「商品名称」列搜索并选择商品后自动填充信息'
+              "
+            >
+              <a-button
+                type="primary"
+                :icon="h(PlusOutlined)"
+                :disabled="isEmpty(formData.scId) || isEmpty(formData.supplierId)"
+                @click="addProduct"
+                >新增</a-button
+              >
             </a-tooltip>
             <a-button :icon="h(DeleteOutlined)" @click="delProduct" danger>删除</a-button>
             <a-button :icon="h(PlusOutlined)" @click="openBatchAddProductDialog"
               >批量添加商品</a-button
             >
+            <a-checkbox v-model:checked="showAllProducts">查看全部商品</a-checkbox>
             <a-button :icon="h(NumberOutlined)" @click="batchInputPurchaseNum"
               >批量录入数量</a-button
             >
             <a-button :icon="h(EditOutlined)" @click="batchInputPurchasePrice"
               >批量调整采购价</a-button
             >
-            <a-button :icon="h(AlertOutlined)" @click="setGift">设置赠品</a-button>
+            <a-button :icon="h(AlertOutlined)" @click="setGift(true)">设置赠品</a-button>
+            <a-button @click="setGift(false)">取消赠品</a-button>
             <a-button :icon="h(ScanOutlined)" @click="openScanDialog">扫码录入</a-button>
             <a-button :icon="h(UploadOutlined)" @click="openExcelModifyPriceDialog"
               >EXCEL修改采购价</a-button
@@ -170,7 +187,9 @@
       </j-border>
       <batch-add-product
         ref="batchAddProductDialog"
+        :key="formData.supplierId + ':' + showAllProducts"
         :sc-id="formData.scId"
+        :supplier-id="showAllProducts ? '' : formData.supplierId"
         @confirm="batchAddProduct"
       />
 
@@ -279,6 +298,8 @@
     UploadOutlined,
   } from '@ant-design/icons-vue';
   import * as api from '@/api/sc/purchase/order';
+  import * as supplierProductApi from '@/api/base-data/supplier/product';
+  import { warnUnlinkedSupplierProducts } from './supplierProductHelper.mjs';
   import * as configApi from '@/api/sc/purchase/config';
   import { multiplePageMix } from '@/mixins/multiplePageMix';
   import {
@@ -308,7 +329,13 @@
     PATTERN_IS_FLOAT_GT_ZERO,
     PATTERN_IS_PRICE,
   } from '@/utils/utils';
-  import { createSuccess, createError, createConfirm, createPrompt } from '@/hooks/web/msg';
+  import {
+    createSuccess,
+    createError,
+    createConfirm,
+    createPrompt,
+    createWarning,
+  } from '@/hooks/web/msg';
   import { buildExcelModifyPriceTemplateData } from './excelModifyPriceTemplateHelper.mjs';
 
   export default defineComponent({
@@ -344,6 +371,7 @@
         loading: false,
         // 表单数据
         formData: {},
+        purchaserTouched: false,
         // 工具栏配置
         toolbarConfig: {
           // 缩放
@@ -413,6 +441,7 @@
           },
         ],
         tableData: [],
+        showAllProducts: false,
         requireBpm: false,
         scanCode: '',
         scanLoading: false,
@@ -431,6 +460,15 @@
         ],
       };
     },
+    watch: {
+      'formData.supplierId'() {
+        this.showAllProducts = false;
+        this.clearProductCandidates();
+      },
+      showAllProducts() {
+        this.clearProductCandidates();
+      },
+    },
     computed: {
       excelModifyPriceTemplateData() {
         return buildExcelModifyPriceTemplateData(this.tableData);
@@ -448,6 +486,17 @@
       document.removeEventListener('keydown', this.handleKeyDown);
     },
     methods: {
+      clearProductCandidates() {
+        this.tableData.forEach((row) => {
+          row.products = [];
+          row.productOptions = [];
+        });
+        this.scanCandidates = [];
+        this.scanQueue = [];
+        this.scanPendingCode = '';
+        this.scanQueuePaused = false;
+        if (this.scanDialogVisible) this.closeScanDialog();
+      },
       // 处理键盘事件
       handleKeyDown(event) {
         // 按下回车键时调用addProduct方法
@@ -501,6 +550,19 @@
           description: '',
         };
 
+        const formData = this.formData;
+        this.purchaserTouched = false;
+        api
+          .getDefaultPurchaser()
+          .then((purchaserId) => {
+            if (this.formData === formData && !this.purchaserTouched) {
+              formData.purchaserId = purchaserId || '';
+            }
+          })
+          .catch(() => {
+            // 默认值查询失败时保留手动选择入口。
+          });
+
         this.tableData = [];
         this.scanCode = '';
         this.scanLoading = false;
@@ -548,6 +610,10 @@
           createError('请先选择仓库！');
           return;
         }
+        if (isEmpty(this.formData.supplierId)) {
+          createError('请先选择供应商！');
+          return;
+        }
         this.tableData.push(this.emptyProduct());
         this.$nextTick(() => {
           const productInputRef = this.$refs['productInputRef' + (this.tableData.length - 1)];
@@ -558,13 +624,20 @@
       },
       // 搜索商品
       queryProduct(queryString, row) {
-        if (isEmpty(queryString)) {
+        if (isEmpty(queryString) || isEmpty(this.formData.supplierId)) {
           row.products = [];
           row.productOptions = [];
           return;
         }
 
-        api.searchPurchaseProducts(this.formData.scId, queryString, false).then((res) => {
+        const supplierId = this.formData.supplierId;
+        const showAllProducts = this.showAllProducts;
+        api.searchPurchaseProducts(
+          this.formData.scId, queryString, false, showAllProducts ? undefined : supplierId,
+        ).then((res) => {
+          if (supplierId !== this.formData.supplierId || showAllProducts !== this.showAllProducts) {
+            return;
+          }
           row.products = res;
           row.productOptions = res.map((item) => {
             return {
@@ -605,11 +678,19 @@
           createError('请先选择仓库！');
           return;
         }
+        if (isEmpty(this.formData.supplierId)) {
+          createError('请先选择供应商！');
+          return;
+        }
         this.$refs.batchAddProductDialog.openDialog();
       },
       openScanDialog() {
         if (isEmpty(this.formData.scId)) {
           createError('请先选择仓库！');
+          return;
+        }
+        if (isEmpty(this.formData.supplierId)) {
+          createError('请先选择供应商！');
           return;
         }
         Object.assign(this.$data, openScanDialogState(this.$data));
@@ -652,6 +733,10 @@
           this.focusScanInput();
           return;
         }
+        if (isEmpty(this.formData.supplierId)) {
+          createError('请先选择供应商！');
+          return;
+        }
 
         if (isEmpty(this.scanCode)) {
           this.setScanMessage('请先扫描商品条码或商品编号！', 'warning');
@@ -679,8 +764,18 @@
         }
 
         Object.assign(this.$data, state);
+        const supplierId = this.formData.supplierId;
+        const showAllProducts = this.showAllProducts;
         try {
-          const products = await api.searchPurchaseProducts(this.formData.scId, code, false);
+          const products = await api.searchPurchaseProducts(
+            this.formData.scId,
+            code,
+            false,
+            showAllProducts ? undefined : supplierId,
+          );
+          if (supplierId !== this.formData.supplierId || showAllProducts !== this.showAllProducts) {
+            return;
+          }
           if (isEmpty(products)) {
             this.setScanMessage('条码/编号【' + code + '】未匹配到商品！', 'error');
             Object.assign(this.$data, finishScanConsumeState(this.$data));
@@ -804,16 +899,18 @@
         });
       },
       // 设置赠品
-      setGift() {
+      setGift(isGift) {
         const records = this.$refs.grid.getCheckboxRecords();
         if (isEmpty(records)) {
-          createError('请选择要设置为赠品的商品数据！');
+          createError('请选择商品数据！');
           return;
         }
 
         records.forEach((item) => {
-          item.purchasePrice = 0;
-          item.isGift = true;
+          if (isGift) {
+            item.purchasePrice = 0;
+          }
+          item.isGift = isGift;
         });
 
         this.calcSum();
@@ -1001,8 +1098,8 @@
         const params = this.buildParams();
 
         this.loading = true;
-        api
-          .create(params)
+        warnUnlinkedSupplierProducts(params, supplierProductApi.listBySupplier, createWarning)
+          .then(() => api.create(params))
           .then(() => {
             createSuccess('保存成功！');
 
@@ -1023,8 +1120,8 @@
 
         createConfirm('对采购单据执行审核通过操作？').then(() => {
           this.loading = true;
-          api
-            .directApprovePass(params)
+          warnUnlinkedSupplierProducts(params, supplierProductApi.listBySupplier, createWarning)
+            .then(() => api.directApprovePass(params))
             .then(() => {
               createSuccess('审核通过！');
 
