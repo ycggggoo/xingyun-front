@@ -6,9 +6,20 @@ import { QuerySupplierProductBo } from '@/api/base-data/supplier/product/model/q
 import { GetSupplierProductBo } from '@/api/base-data/supplier/product/model/getSupplierProductBo';
 import { CreateSupplierProductVo } from '@/api/base-data/supplier/product/model/createSupplierProductVo';
 import { UpdateSupplierProductVo } from '@/api/base-data/supplier/product/model/updateSupplierProductVo';
+import { QueryProductVo } from '@/api/base-data/product/info/model/queryProductVo';
+import { ProductSupplierBo } from '@/api/base-data/supplier/product/model/productSupplierBo';
 
 const baseUrl = '/basedata/supplier/product';
 const region = 'cloud-api';
+
+export function queryProducts(
+  params: Partial<QueryProductVo>,
+): Promise<PageResult<ProductSupplierBo>> {
+  return defHttp.get<PageResult<ProductSupplierBo>>(
+    { url: baseUrl + '/products', params },
+    { region },
+  );
+}
 
 export function query(params: QuerySupplierProductVo): Promise<PageResult<QuerySupplierProductBo>> {
   return defHttp.get<PageResult<QuerySupplierProductBo>>(
