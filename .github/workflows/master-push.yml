@@ -1,0 +1,27 @@
+name: Master Push - Build & Deploy
+
+on:
+  push:
+    branches: [master]
+
+jobs:
+  frontend:
+    uses: ycggggoo/.github/.github/workflows/frontend-node-ci.yml@master
+    with:
+      image-name: ycggggoo/xingyun-web
+      node-version: '20'
+    secrets:
+      GHCR_PAT: ${{ secrets.GHCR_PAT }}
+
+  deploy:
+    needs: frontend
+    uses: ycggggoo/.github/.github/workflows/ssh-deploy.yml@master
+    with:
+      image-name: ghcr.io/ycggggoo/xingyun-web
+      container-name: xingyun-web
+      compose-file: docker-compose.app.yml
+      deploy-dir: /data/xingyun-erp
+      health-url: http://localhost:80/
+    secrets:
+      SSH_HOST: ${{ secrets.SSH_HOST }}
+      SSH_KEY: ${{ secrets.SSH_KEY }}
