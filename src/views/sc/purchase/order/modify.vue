@@ -893,6 +893,8 @@
               productId: t.productId,
               skuId: t.skuId || t.productId,
               purchasePrice: t.purchasePrice,
+              purchaseOrderDetailId: t.purchaseOrderDetailId || '',
+              taxRate: t.taxRate || 0,
               purchaseNum: t.purchaseNum,
               description: t.description,
             };

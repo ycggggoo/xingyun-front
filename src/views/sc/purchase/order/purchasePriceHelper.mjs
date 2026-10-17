@@ -19,6 +19,7 @@ export function withProductPurchasePrice(product) {
   return {
     ...product,
     preTaxPurchasePrice: product.purchasePrice,
+    purchaseOrderDetailId: '',
     purchasePrice: toTaxPurchasePrice(product.purchasePrice, product.taxRate),
     _originalPreTaxPrice: undefined,
     _originalTaxPrice: undefined,
@@ -32,6 +33,7 @@ export function withOrderPurchasePrice(detail) {
   return {
     ...detail,
     preTaxPurchasePrice,
+    purchaseOrderDetailId: detail.id,
     _originalPreTaxPrice: preTaxPurchasePrice,
     _originalTaxPrice: detail.purchasePrice,
   };
