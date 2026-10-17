@@ -1,0 +1,18 @@
+# 构建上下文: xingyun-front 前端仓库根目录
+# docker build -f deploy/Dockerfile.web -t xingyun-web:local xingyun-front
+
+FROM node:20-alpine AS build
+ENV npm_config_registry=https://registry.npmmirror.com
+WORKDIR /app
+RUN npm i -g pnpm@9.15.9
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY . .
+RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store pnpm install --frozen-lockfile
+# docker 模式构建: API 地址写占位符 __vg_base_url,容器启动时由 entrypoint 替换
+RUN pnpm build:docker
+
+FROM nginx:1.27-alpine
+COPY --from=build /app/dist /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY entrypoint-web.sh /docker-entrypoint.d/40-xingyun-env.sh
+RUN chmod +x /docker-entrypoint.d/40-xingyun-env.sh
