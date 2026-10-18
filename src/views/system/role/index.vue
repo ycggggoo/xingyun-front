@@ -91,8 +91,6 @@
           <!-- 授权窗口 -->
           <permission ref="permissionDialog" :ids="ids" @confirm="search" />
 
-          <view-scope :id="id" ref="viewScopeDialog" />
-
           <!-- 数据权限窗口 -->
           <data-permission
             ref="dataPermissionDialog"
@@ -129,7 +127,6 @@
   import Modify from './modify.vue';
   import Detail from './detail.vue';
   import Permission from './permission.vue';
-  import ViewScope from './view-scope.vue';
   import DataPermission from '@/components/DataPermission/index.vue';
   import BatchDataPermission from '@/components/DataPermission/batch.vue';
   import {
@@ -157,7 +154,6 @@
       Modify,
       Detail,
       Permission,
-      ViewScope,
       DataPermission,
       BatchDataPermission,
       DownOutlined,
@@ -207,7 +203,7 @@
           { field: 'createTime', title: '创建时间', width: 170, sortable: true },
           { field: 'updateBy', title: '修改人', width: 100 },
           { field: 'updateTime', title: '修改时间', width: 170, sortable: true },
-          { title: '操作', width: 360, fixed: 'right', slots: { default: 'action_default' } },
+          { title: '操作', width: 280, fixed: 'right', slots: { default: 'action_default' } },
         ],
         // 请求接口配置
         proxyConfig: {
@@ -285,15 +281,6 @@
             onClick: () => {
               this.id = row.id;
               this.$nextTick(() => this.$refs.dataPermissionDialog.openDialog());
-            },
-          },
-          {
-            permission: ['system:role:permission'],
-            label: '订单查看范围',
-            ifShow: () => row.permission !== 'admin',
-            onClick: () => {
-              this.id = row.id;
-              this.$nextTick(() => this.$refs.viewScopeDialog.openDialog());
             },
           },
         ];
