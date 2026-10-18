@@ -2,7 +2,7 @@
   <div class="app-card-container">
     <div v-permission="['purchase:order:modify']" v-loading="loading">
       <a-alert
-        description="提示：优先显示供应商关联商品，未维护关联时显示全部；也可勾选查看全部商品。未关联商品保存时仅提醒。回车添加商品，Tab切换输入框。"
+        description="提示：仅显示所选供应商已关联的商品，请先维护供应商商品关联。回车添加商品，Tab切换输入框。"
         type="info"
         show-icon
       />
@@ -94,7 +94,6 @@
             <a-button :icon="h(PlusOutlined)" @click="openBatchAddProductDialog"
               >批量添加商品</a-button
             >
-            <a-checkbox v-model:checked="showAllProducts">查看全部商品</a-checkbox>
             <a-button :icon="h(NumberOutlined)" @click="batchInputPurchaseNum"
               >批量录入数量</a-button
             >
@@ -215,9 +214,9 @@
       <batch-add-product
         ref="batchAddProductDialog"
         :order-pricing="true"
-        :key="formData.supplierId + ':' + showAllProducts"
+        :key="formData.supplierId"
         :sc-id="formData.scId"
-        :supplier-id="showAllProducts ? '' : formData.supplierId"
+        :supplier-id="formData.supplierId"
         @confirm="batchAddProduct"
       />
 
@@ -399,7 +398,6 @@
           },
         ],
         tableData: [],
-        showAllProducts: false,
         // EXCEL修改价格列定义
         excelModifyPriceColumns: [
           { field: 'skuCode', label: 'SKU编号', required: true },
@@ -409,10 +407,6 @@
     },
     watch: {
       'formData.supplierId'() {
-        this.showAllProducts = false;
-        this.clearProductCandidates();
-      },
-      showAllProducts() {
         this.clearProductCandidates();
       },
     },
@@ -565,11 +559,10 @@
         }
 
         const supplierId = this.formData.supplierId;
-        const showAllProducts = this.showAllProducts;
         api.searchPurchaseProducts(
-          this.formData.scId, queryString, false, showAllProducts ? undefined : supplierId,
+          this.formData.scId, queryString, false, supplierId,
         ).then((res) => {
-          if (supplierId !== this.formData.supplierId || showAllProducts !== this.showAllProducts) {
+          if (supplierId !== this.formData.supplierId) {
             return;
           }
           row.products = res;
