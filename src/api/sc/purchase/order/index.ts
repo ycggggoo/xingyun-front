@@ -21,6 +21,16 @@ const baseUrl = '/purchase/order';
 const selectorBaseUrl = '/selector';
 const region = 'cloud-api';
 
+/**
+ * 新建订单的默认采购员，无采购员角色时返回空字符串
+ */
+export function getDefaultPurchaser(): Promise<string> {
+  return defHttp.get<string>(
+    { url: baseUrl + '/default-purchaser' },
+    { region, hiddenError: true },
+  );
+}
+
 export function selector(
   params: PurchaseOrderSelectorVo,
 ): Promise<PageResult<PurchaseOrderSelectorBo>> {
@@ -410,6 +420,7 @@ export function searchPurchaseProducts(
   scId: string,
   condition: string,
   isReturn: boolean = false,
+  supplierId?: string,
 ): Promise<PurchaseProductBo[]> {
   return defHttp.get<PurchaseProductBo[]>(
     {
@@ -418,6 +429,7 @@ export function searchPurchaseProducts(
         scId,
         condition,
         isReturn,
+        supplierId,
       },
     },
     {

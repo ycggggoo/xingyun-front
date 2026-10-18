@@ -131,6 +131,9 @@
       },
     },
     methods: {
+      openDialog() {
+        this.$refs.selector.open();
+      },
       getList(params) {
         return api
           .selector({

@@ -260,17 +260,22 @@
         api
           .get(this.id)
           .then((data) => {
-            this.formData = Object.assign({}, data, {
-              mainImage: data.mainImage || [],
-              detailImages: data.detailImages || [],
-              skus: (data.skus || []).map((sku) => {
-                return Object.assign({}, sku, {
-                  multiCodesStr: this.formatMultiCodes(sku.multiCodes),
-                });
-              }),
-              productBundles: data.productBundles || [],
-              properties: data.properties || [],
-            });
+            this.formData = Object.assign(
+              {},
+              this.formData,
+              Object.fromEntries(Object.entries(data).map(([key, value]) => [key, value ?? ''])),
+              {
+                mainImage: data.mainImage || [],
+                detailImages: data.detailImages || [],
+                skus: (data.skus || []).map((sku) => {
+                  return Object.assign({}, sku, {
+                    multiCodesStr: this.formatMultiCodes(sku.multiCodes),
+                  });
+                }),
+                productBundles: data.productBundles || [],
+                properties: data.properties || [],
+              },
+            );
           })
           .finally(() => {
             this.loading = false;

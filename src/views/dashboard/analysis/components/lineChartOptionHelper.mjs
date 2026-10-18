@@ -1,15 +1,5 @@
 const AMOUNT_SERIES_NAME = '单据总金额';
 const QUANTITY_SERIES_NAME = '单据总笔数';
-const AMOUNT_AXIS_UNITS = [
-  { value: 1000000000000, label: '万亿' },
-  { value: 100000000000, label: '千亿' },
-  { value: 10000000000, label: '百亿' },
-  { value: 100000000, label: '亿' },
-  { value: 10000000, label: '千万' },
-  { value: 1000000, label: '百万' },
-  { value: 10000, label: '万' },
-  { value: 1000, label: '千' },
-];
 
 function toNumeric(value) {
   const normalized = Number(value);
@@ -39,20 +29,7 @@ function formatFullAmountLabel(value) {
 }
 
 export function formatAmountAxisLabel(value) {
-  const normalized = toNumeric(value);
-  if (normalized === null) {
-    return '￥0.00';
-  }
-
-  const absValue = Math.abs(normalized);
-  const matchedUnit = AMOUNT_AXIS_UNITS.find((item) => absValue >= item.value);
-  if (matchedUnit) {
-    return `￥${formatLocalizedNumber(normalized / matchedUnit.value, { fixed: true })}${
-      matchedUnit.label
-    }`;
-  }
-
-  return formatFullAmountLabel(normalized);
+  return formatLocalizedNumber(value);
 }
 
 export function formatQuantityAxisLabel(value) {
@@ -145,8 +122,13 @@ export function buildLineChartOptions({
     yAxis: [
       {
         type: 'value',
-        name: '金额',
+        name: '金额（元）',
         position: 'left',
+        axisPointer: {
+          label: {
+            formatter: ({ value }) => `${formatLocalizedNumber(value, { fixed: true })}元`,
+          },
+        },
         axisLine: {
           show: false,
         },
