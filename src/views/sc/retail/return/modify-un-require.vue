@@ -687,6 +687,8 @@
 
         records.forEach((item) => {
           item.retailPrice = 0;
+          item.taxPrice = 0;
+          item.discountRate = 0;
           item.isGift = true;
         });
 

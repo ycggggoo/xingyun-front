@@ -14,7 +14,7 @@
         show-overflow
         highlight-hover-row
         keep-source
-        row-id="id"
+        row-id="_rowKey"
         :columns="tableColumn"
         :data="tableData"
         :toolbar-config="toolbarConfig"
