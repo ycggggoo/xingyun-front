@@ -11,6 +11,6 @@ export function buildExcelModifyPriceTemplateData(tableData = []) {
     })
     .map((item) => ({
       skuCode: item.skuCode,
-      price: item.purchasePrice,
+      price: item.preTaxPurchasePrice,
     }));
 }

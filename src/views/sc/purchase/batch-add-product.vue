@@ -84,6 +84,7 @@
   import { h, defineComponent } from 'vue';
   import { SearchOutlined } from '@ant-design/icons-vue';
   import * as api from '@/api/sc/purchase/order';
+  import { toTaxPurchasePrice } from './order/purchasePriceHelper.mjs';
   import { isEmpty } from '@/utils/utils';
   import { createError } from '@/hooks/web/msg';
   import ProductBrandSelector from '@/components/Selector/ProductBrandSelector.vue';
@@ -103,6 +104,10 @@
       supplierId: {
         type: String,
         default: '',
+      },
+      orderPricing: {
+        type: Boolean,
+        default: false,
       },
       isReturn: {
         type: Boolean,
@@ -145,9 +150,23 @@
           { field: 'spec', title: '规格', width: 80 },
           { field: 'categoryName', title: '商品分类', width: 120 },
           { field: 'brandName', title: '商品品牌', width: 120 },
-          { field: 'purchasePrice', title: '采购价（元）', align: 'right', width: 120 },
+          {
+            field: 'purchasePrice',
+            title: this.orderPricing ? '税前采购价（元）' : '采购价（元）',
+            align: 'right',
+            width: 140,
+          },
           { field: 'taxRate', title: '税率（%）', align: 'right', width: 100 },
-          { field: 'taxCostPrice', title: '含税成本价（元）', align: 'right', width: 140 },
+          {
+            field: this.orderPricing ? 'taxPurchasePrice' : 'taxCostPrice',
+            title: this.orderPricing ? '含税采购价（元）' : '含税成本价（元）',
+            align: 'right',
+            width: 140,
+            formatter: ({ row }) =>
+              this.orderPricing
+                ? toTaxPurchasePrice(row.purchasePrice, row.taxRate)
+                : row.taxCostPrice,
+          },
           { field: 'stockNum', title: '库存数量', align: 'right', width: 100 },
         ],
         // 请求接口配置

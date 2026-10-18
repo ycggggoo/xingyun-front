@@ -115,6 +115,7 @@
   import PayType from '@/views/sc/pay-type/index.vue';
   import * as api from '@/api/sc/purchase/order';
   import { isFloatGeZero, getNumber, mul, add } from '@/utils/utils';
+  import { withOrderPurchasePrice } from './purchasePriceHelper.mjs';
   import { PURCHASE_ORDER_STATUS } from '@/enums/biz/purchaseOrderStatus';
 
   export default defineComponent({
@@ -156,7 +157,7 @@
           { field: 'spec', title: '规格', width: 80 },
           { field: 'categoryName', title: '商品分类', width: 120 },
           { field: 'brandName', title: '商品品牌', width: 120 },
-          { field: 'purchasePrice', title: '采购价（元）', align: 'right', width: 120 },
+          { field: 'preTaxPurchasePrice', title: '税前采购价（元）', align: 'right', width: 140 },
           { field: 'taxRate', title: '税率（%）', align: 'right', width: 100 },
           {
             field: 'isGift',
@@ -166,6 +167,7 @@
               return cellValue ? '是' : '否';
             },
           },
+          { field: 'purchasePrice', title: '含税采购价（元）', align: 'right', width: 140 },
           { field: 'purchaseNum', title: '采购数量', align: 'right', width: 100 },
           {
             field: 'purchaseAmount',
@@ -225,7 +227,7 @@
               totalAmount: 0,
               flowInstanceId: res.flowInstanceId,
             };
-            this.tableData = res.details || [];
+            this.tableData = (res.details || []).map(withOrderPurchasePrice);
 
             this.$refs.payType.setTableData(res.payTypes || []);
             this.calcSum();

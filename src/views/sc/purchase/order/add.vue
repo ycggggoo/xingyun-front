@@ -71,13 +71,13 @@
               >批量录入数量</a-button
             >
             <a-button :icon="h(EditOutlined)" @click="batchInputPurchasePrice"
-              >批量调整采购价</a-button
+              >批量调整税前采购价</a-button
             >
             <a-button :icon="h(AlertOutlined)" @click="setGift(true)">设置赠品</a-button>
             <a-button @click="setGift(false)">取消赠品</a-button>
             <a-button :icon="h(ScanOutlined)" @click="openScanDialog">扫码录入</a-button>
             <a-button :icon="h(UploadOutlined)" @click="openExcelModifyPriceDialog"
-              >EXCEL修改采购价</a-button
+              >EXCEL修改税前采购价</a-button
             >
           </a-space>
         </template>
@@ -115,7 +115,7 @@
                   <vxe-column field="unit" title="单位" width="80" />
                   <vxe-column
                     field="purchasePrice"
-                    title="采购价（元）"
+                    title="税前采购价（元）"
                     width="140"
                     align="right"
                   />
@@ -127,12 +127,12 @@
           <span v-else>{{ row.productName }}</span>
         </template>
 
-        <!-- 采购价 列自定义内容 -->
+        <!-- 税前采购价 列自定义内容 -->
         <template #purchasePrice_default="{ row }">
-          <span v-if="row.isGift">{{ row.purchasePrice }}</span>
+          <span v-if="row.isGift">{{ row.preTaxPurchasePrice }}</span>
           <a-input
             v-else
-            v-model:value="row.purchasePrice"
+            v-model:value="row.preTaxPurchasePrice"
             class="number-input"
             @input="(e) => purchasePriceInput(row, e.target.value)"
           />
@@ -187,6 +187,7 @@
       </j-border>
       <batch-add-product
         ref="batchAddProductDialog"
+        :order-pricing="true"
         :key="formData.supplierId + ':' + showAllProducts"
         :sc-id="formData.scId"
         :supplier-id="showAllProducts ? '' : formData.supplierId"
@@ -197,8 +198,8 @@
         ref="excelModifyPriceDialog"
         :columns="excelModifyPriceColumns"
         :template-data="excelModifyPriceTemplateData"
-        template-filename="EXCEL修改采购价模板"
-        title="EXCEL修改采购价"
+        template-filename="EXCEL修改税前采购价模板"
+        title="EXCEL修改税前采购价"
         :close-after-finish="false"
         @confirm="handleExcelModifyPrice"
       />
@@ -250,7 +251,7 @@
             <vxe-column field="salePropertyText" title="销售属性" min-width="180" />
             <vxe-column field="spec" title="规格" width="80" />
             <vxe-column field="unit" title="单位" width="80" />
-            <vxe-column field="purchasePrice" title="采购价（元）" width="140" align="right" />
+            <vxe-column field="purchasePrice" title="税前采购价（元）" width="140" align="right" />
             <vxe-column field="stockNum" title="库存数量" width="140" align="right" />
           </vxe-table>
         </a-space>
@@ -336,6 +337,7 @@
     createPrompt,
     createWarning,
   } from '@/hooks/web/msg';
+  import { withProductPurchasePrice, setTaxExclusivePrice } from './purchasePriceHelper.mjs';
   import { buildExcelModifyPriceTemplateData } from './excelModifyPriceTemplateHelper.mjs';
 
   export default defineComponent({
@@ -402,8 +404,8 @@
           { field: 'categoryName', title: '商品分类', width: 120 },
           { field: 'brandName', title: '商品品牌', width: 120 },
           {
-            field: 'purchasePrice',
-            title: '采购价（元）',
+            field: 'preTaxPurchasePrice',
+            title: '税前采购价（元）',
             align: 'right',
             width: 140,
             slots: { default: 'purchasePrice_default' },
@@ -417,7 +419,7 @@
               return cellValue ? '是' : '否';
             },
           },
-          { field: 'taxCostPrice', title: '含税成本价（元）', align: 'right', width: 140 },
+          { field: 'purchasePrice', title: '含税采购价（元）', align: 'right', width: 140 },
           { field: 'stockNum', title: '库存数量', align: 'right', width: 140 },
           {
             field: 'purchaseNum',
@@ -456,7 +458,7 @@
         // EXCEL修改价格列定义
         excelModifyPriceColumns: [
           { field: 'skuCode', label: 'SKU编号', required: true },
-          { field: 'price', label: '采购价', required: false },
+          { field: 'price', label: '税前采购价', required: false },
         ],
       };
     },
@@ -593,7 +595,7 @@
           categoryName: '',
           brandName: '',
           purchasePrice: '',
-          taxCostPrice: '',
+          preTaxPurchasePrice: '',
           stockNum: '',
           taxRate: '',
           isGift: false,
@@ -650,9 +652,12 @@
       // 选择商品（从表格中点击）
       handleSelectProduct(index, product) {
         // 将选中的商品数据赋值给当前行
-        this.tableData[index] = Object.assign(this.tableData[index], product);
+        this.tableData[index] = Object.assign(
+          this.tableData[index],
+          withProductPurchasePrice(product),
+        );
 
-        this.purchasePriceInput(this.tableData[index], this.tableData[index].purchasePrice);
+        this.purchasePriceInput(this.tableData[index], this.tableData[index].preTaxPurchasePrice);
       },
       // 删除商品
       delProduct() {
@@ -697,7 +702,7 @@
         this.focusScanInput();
       },
       createScannedRow(product, purchaseNum = 1) {
-        return Object.assign(this.emptyProduct(), product, {
+        return Object.assign(this.emptyProduct(), withProductPurchasePrice(product), {
           isGift: false,
           purchaseNum,
         });
@@ -816,7 +821,8 @@
         Object.assign(this.$data, closeScanDialogState(this.$data));
         this.isScanInputFocused = false;
       },
-      purchasePriceInput(_row, _value) {
+      purchasePriceInput(row, value) {
+        setTaxExclusivePrice(row, value);
         this.calcSum();
       },
       purchaseNumInput(_value) {
@@ -870,7 +876,7 @@
           });
         });
       },
-      // 批量录入采购价
+      // 批量录入税前采购价
       batchInputPurchasePrice() {
         const records = this.$refs.grid.getCheckboxRecords();
         if (isEmpty(records)) {
@@ -880,20 +886,18 @@
 
         for (let i = 0; i < records.length; i++) {
           if (records[i].isGift) {
-            createError('第' + (i + 1) + '行商品为赠品，不允许录入采购价！');
+            createError('第' + (i + 1) + '行商品为赠品，不允许录入税前采购价！');
             return;
           }
         }
 
-        createPrompt('请输入采购价（元）', {
+        createPrompt('请输入税前采购价（元）', {
           inputPattern: PATTERN_IS_PRICE,
-          inputErrorMessage: '采购价（元）必须是数字并且不小于0，最多允许6位小数',
-          title: '批量调整采购价',
+          inputErrorMessage: '税前采购价（元）必须是数字并且不小于0，最多允许6位小数',
+          title: '批量调整税前采购价',
           required: true,
         }).then(({ value }) => {
           records.forEach((t) => {
-            t.purchasePrice = value;
-
             this.purchasePriceInput(t, value);
           });
         });
@@ -908,7 +912,7 @@
 
         records.forEach((item) => {
           if (isGift) {
-            item.purchasePrice = 0;
+            setTaxExclusivePrice(item, 0);
           }
           item.isGift = isGift;
         });
@@ -957,7 +961,7 @@
               .filter((item) => !item.isGift)
               .forEach((item) => {
                 if (item.skuCode === skuCode) {
-                  item.purchasePrice = price;
+                  setTaxExclusivePrice(item, price);
                   matchedCount++;
                 }
               });
@@ -965,7 +969,7 @@
 
           this.calcSum();
           this.$refs.excelModifyPriceDialog.closeDialog();
-          createSuccess('成功修改' + matchedCount + '条商品的采购价！');
+          createSuccess('成功修改' + matchedCount + '条商品的税前采购价！');
         } catch (e) {
           createError('修改价格失败：' + (e.message || e));
         } finally {
@@ -1002,30 +1006,30 @@
             return false;
           }
 
-          if (isEmpty(product.purchasePrice)) {
-            createError('第' + (i + 1) + '行商品采购价不允许为空！');
+          if (isEmpty(product.preTaxPurchasePrice)) {
+            createError('第' + (i + 1) + '行商品税前采购价不允许为空！');
             return false;
           }
 
-          if (!isFloat(product.purchasePrice)) {
-            createError('第' + (i + 1) + '行商品采购价必须是数字！');
+          if (!isFloat(product.preTaxPurchasePrice)) {
+            createError('第' + (i + 1) + '行商品税前采购价必须是数字！');
             return false;
           }
 
           if (product.isGift) {
-            if (parseFloat(product.purchasePrice) !== 0) {
-              createError('第' + (i + 1) + '行商品采购价必须等于0！');
+            if (parseFloat(product.preTaxPurchasePrice) !== 0) {
+              createError('第' + (i + 1) + '行商品税前采购价必须等于0！');
               return false;
             }
           } else {
-            if (!isFloatGtZero(product.purchasePrice)) {
-              createError('第' + (i + 1) + '行商品采购价必须大于0！');
+            if (!isFloatGtZero(product.preTaxPurchasePrice)) {
+              createError('第' + (i + 1) + '行商品税前采购价必须大于0！');
               return false;
             }
           }
 
-          if (!isNumberPrecision(product.purchasePrice, 6)) {
-            createError('第' + (i + 1) + '行商品采购价最多允许6位小数！');
+          if (!isNumberPrecision(product.preTaxPurchasePrice, 6)) {
+            createError('第' + (i + 1) + '行商品税前采购价最多允许6位小数！');
             return false;
           }
 
@@ -1083,6 +1087,7 @@
               productId: t.productId,
               skuId: t.skuId || t.productId,
               purchasePrice: t.purchasePrice,
+              taxRate: t.taxRate || 0,
               purchaseNum: t.purchaseNum,
               description: t.description,
             };
